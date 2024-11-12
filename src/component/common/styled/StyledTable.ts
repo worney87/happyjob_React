@@ -6,6 +6,7 @@ export const StyledTable = styled.table`
     margin: 20px 0px 0px 0px;
     font-size: 18px;
     text-align: left;
+    table-layout: fixed;
 
     th,
     td {
