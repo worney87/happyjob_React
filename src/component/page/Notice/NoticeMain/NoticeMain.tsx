@@ -7,9 +7,9 @@ import {
 import { useEffect, useState } from "react";
 import axios, { AxiosResponse } from "axios";
 import { useRecoilState } from "recoil";
-import { Protal } from "../../../common/potal/Portal";
 import { NoticeModal } from "../NoticeModal/NoticeModal";
 import { Button } from "react-bootstrap";
+import { Portal } from "../../../common/portal/Portal";
 
 interface INoitce {
   author: string;
@@ -29,7 +29,7 @@ export const NoticeMain = () => {
   const { search } = useLocation();
   const [noticeList, setNoticeList] = useState<INoitce[]>();
   const [listCount, setListCount] = useState<number>(0);
-
+  const [modalState, setModalState] = useState<boolean>(false);
   useEffect(() => {
     searchNoticeList();
   }, [search]);
@@ -44,6 +44,10 @@ export const NoticeMain = () => {
       setNoticeList(res.data.notice);
       setListCount(res.data.noticeCnt);
     });
+  };
+
+  const handlerModal = () => {
+    setModalState(true);
   };
 
   return (
@@ -62,9 +66,9 @@ export const NoticeMain = () => {
           {noticeList && noticeList.length > 0 ? (
             noticeList?.map((notice, index) => {
               return (
-                <tr key={index}>
-                  <StyledTd>{notice.noticeIdx}</StyledTd>
-                  <StyledTd><Link to="">{notice.title}</Link></StyledTd>
+                <tr key={notice.noticeIdx} onClick={handlerModal}>
+                  <StyledTd>{index+1}</StyledTd>
+                  <StyledTd>{notice.title}</StyledTd>
                   <StyledTd>{notice.author}</StyledTd>
                   <StyledTd>{notice.createdDate}</StyledTd>
                 </tr>
@@ -77,6 +81,11 @@ export const NoticeMain = () => {
           )}
         </tbody>
       </StyledTable>
+      {modalState && (
+        <Portal>
+          <NoticeModal />
+        </Portal>
+      )}
     </>
   );
 };

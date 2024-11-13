@@ -10,7 +10,8 @@ export const NoticeSearch = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.location.search && navigate(window.location.pathname, { replace: true });
+    window.location.search &&
+      navigate(window.location.pathname, { replace: true });
   }, [navigate]);
 
   const handlerSearch = () => {
