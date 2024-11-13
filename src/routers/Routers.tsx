@@ -12,6 +12,7 @@ const routers: RouteObject[] = [
         element: <DashBoard />,
         children: [{ path: 'board', children: [{ path: 'notice.do', element: <Notice /> }] }],
     },
+
 ];
 
 export const Routers = createBrowserRouter(routers);
