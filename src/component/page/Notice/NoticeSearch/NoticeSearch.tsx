@@ -2,11 +2,14 @@ import { NoticeSearchStyled } from "./styled";
 import { Button } from "../../../common/Button/Button";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRecoilState } from "recoil";
+import { modalState } from "../../../../stores/modalState";
 
 export const NoticeSearch = () => {
   const title = useRef<HTMLInputElement>();
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
+  const [modal, setModal] = useRecoilState<boolean>(modalState);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,6 +28,10 @@ export const NoticeSearch = () => {
     navigate(queryString); // 상대경로
   };
 
+  const handlerModal = () => {
+    setModal(!modal);
+  };
+
   return (
     <NoticeSearchStyled>
       <div className="input-box">
@@ -35,6 +42,7 @@ export const NoticeSearch = () => {
         ></input>
         <input type="date" onChange={(e) => setEndDate(e.target.value)}></input>
         <Button onClick={handlerSearch}>검색</Button>
+        <Button onClick={handlerModal}>등록</Button>
       </div>
     </NoticeSearchStyled>
   );
