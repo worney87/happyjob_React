@@ -16,6 +16,7 @@ import {
 } from "../../../../models/interface/store/INotice";
 import { postNoticeApi } from "../../../../api/postNoticeApi";
 import { Notice } from "../../../../api/api";
+import { PageNavigate } from "../../../common/pageNavigation/PageNavigate";
 
 export const NoticeMain = () => {
   const { search } = useLocation();
@@ -23,7 +24,7 @@ export const NoticeMain = () => {
   const [listCount, setListCount] = useState<number>(0);
   const [modal, setModal] = useRecoilState<boolean>(modalState);
   const [index, setIndex] = useState<number>();
-
+  const [cPage, setCpage] = useState<number>(1);
   useEffect(() => {
     searchNoticeList();
   }, [search]);
@@ -41,6 +42,7 @@ export const NoticeMain = () => {
     if (searchList) {
       setNoticeList(searchList.notice);
       setListCount(searchList.noticeCnt);
+      setCpage(currentPage);
     }
   };
 
@@ -56,7 +58,8 @@ export const NoticeMain = () => {
 
   return (
     <>
-      총 갯수 : {listCount} 현재 페이지 : 0
+      총 갯수 : {listCount} 
+      현재 페이지 : {cPage}
       <StyledTable>
         <thead>
           <tr>
@@ -90,6 +93,12 @@ export const NoticeMain = () => {
           )}
         </tbody>
       </StyledTable>
+      <PageNavigate
+        totalItemsCount={listCount}
+        itemsCountPerPage={5}
+        onChange={searchNoticeList}
+        activePage={cPage}
+      ></PageNavigate>
       {modal && (
         <Portal>
           <NoticeModal

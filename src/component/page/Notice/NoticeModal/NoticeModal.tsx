@@ -3,7 +3,7 @@ import { useRecoilState } from "recoil";
 import { NoticeModalStyled } from "./styled";
 import { modalState } from "../../../../stores/modalState";
 import axios, { AxiosResponse } from "axios";
-import { FC, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FC, useEffect, useRef, useState } from "react";
 import { ILoginInfo } from "../../../../models/interface/store/userInfo";
 import { loginInfoState } from "../../../../stores/userInfo";
 import {
@@ -12,6 +12,7 @@ import {
   INoticeModalProps,
   IPostResponse,
 } from "../../../../models/interface/store/INotice";
+import { contextType } from "react-modal";
 
 export const NoticeModal: FC<INoticeModalProps> = ({
   onSuccess,
@@ -19,10 +20,12 @@ export const NoticeModal: FC<INoticeModalProps> = ({
   setNoticeSeq,
 }) => {
   const [modal, setModal] = useRecoilState<boolean>(modalState);
-  const title = useRef<HTMLInputElement>();
-  const context = useRef<HTMLInputElement>();
   const [userInfo] = useRecoilState<ILoginInfo>(loginInfoState);
   const [noticeDetail, setNoticeDatail] = useState<InoticeDetail>();
+  const [imageUrl, setImageUrl] = useState<string>();
+  const [fileData, setFileData] = useState<File>();
+  const title = useRef<HTMLInputElement>();
+  const context = useRef<HTMLInputElement>();
 
   const closeModal = () => {
     setModal(!modal);
@@ -79,6 +82,41 @@ export const NoticeModal: FC<INoticeModalProps> = ({
       });
   };
 
+  const handlerFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const fileInfo = e.target.files;
+    if (fileInfo && fileInfo.length > 0) {
+      const fileType = fileInfo[0].type.split("/")[0];
+      console.log(fileType);
+      console.log(fileInfo);
+      if (fileType === "image") {
+        setImageUrl(URL.createObjectURL(fileInfo[0]));
+      } else {
+        setImageUrl("");
+      }
+    }
+    setFileData(fileInfo[0]);
+  };
+
+  const handlerFileSave = () => {
+    const fileForm = new FormData();
+    const textData = {
+      noticeTit: title.current.value,
+      noticeCon: context.current.value,
+      loginId: userInfo.loginId,
+    };
+    fileData && fileForm.append("file", fileData);
+    fileForm.append(
+      "text",
+      new Blob([JSON.stringify(textData)], { type: "application/json" })
+    );
+
+    axios
+      .post("/board/noticeSaveForm.do", fileForm)
+      .then((res: AxiosResponse<IPostResponse>) => {
+        res.data.result === "success" && onSuccess();
+      });
+  };
+
   return (
     <NoticeModalStyled>
       <div className="container">
@@ -99,18 +137,30 @@ export const NoticeModal: FC<INoticeModalProps> = ({
           ></input>
         </label>
         파일 :
-        <input type="file" id="fileInput" style={{ display: "none" }}></input>
+        <input
+          type="file"
+          id="fileInput"
+          style={{ display: "none" }}
+          onChange={handlerFile}
+        ></input>
         <label className="img-label" htmlFor="fileInput">
           파일 첨부하기
         </label>
         <div>
           <div>
-            <label>미리보기</label>
-            <img src="" />
+            {imageUrl ? (
+              <>
+                <label>미리보기</label>
+                <img src={imageUrl} alt="preview" />
+                <p>{fileData?.name}</p>
+              </>
+            ) : (
+              <span>{fileData?.name}</span>
+            )}
           </div>
         </div>
         <div className={"button-container"}>
-          <button onClick={noticeSeq ? handlerUpdate : handlerSave}>
+          <button onClick={noticeSeq ? handlerUpdate : handlerFileSave}>
             {noticeSeq ? "수정" : "등록"}
           </button>
           {noticeSeq && <button onClick={handlerDelete}>삭제</button>}
