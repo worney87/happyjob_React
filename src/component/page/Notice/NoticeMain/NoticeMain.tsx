@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   StyledTable,
   StyledTd,
   StyledTh,
 } from "../../../common/styled/StyledTable";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import { NoticeModal } from "../NoticeModal/NoticeModal";
 import { Portal } from "../../../common/portal/Portal";
@@ -17,6 +17,7 @@ import {
 import { postNoticeApi } from "../../../../api/postNoticeApi";
 import { Notice } from "../../../../api/api";
 import { PageNavigate } from "../../../common/pageNavigation/PageNavigate";
+import NoticeContext from "../../../../api/provider/NoticeProvider";
 
 export const NoticeMain = () => {
   const { search } = useLocation();
@@ -25,18 +26,24 @@ export const NoticeMain = () => {
   const [modal, setModal] = useRecoilState<boolean>(modalState);
   const [index, setIndex] = useState<number>();
   const [cPage, setCpage] = useState<number>(1);
-  useEffect(() => {
-    searchNoticeList();
-  }, [search]);
+  const { searchkeyword } = useContext(NoticeContext);
+  const navigate = useNavigate();
 
-  const searchNoticeList = async (currentPage?: number) => {
+  useEffect(() => {
+    searchNoticeListbyProvider();
+  }, [searchkeyword]);
+
+  const searchNoticeListbyProvider = async (currentPage?: number) => {
     currentPage = currentPage || 1;
-    const searchParam = new URLSearchParams(search);
-    searchParam.append("currentPage", currentPage.toString());
-    searchParam.append("pageSize", "5");
+    const searchParam = {
+      currentPage: currentPage.toString(),
+      pageSize: 10,
+      ...searchkeyword,
+    };
+    console.log(searchParam);
 
     const searchList = await postNoticeApi<INoticeListResponse>(
-      Notice.getList,
+      Notice.getListByProvider,
       searchParam
     );
     if (searchList) {
@@ -46,6 +53,27 @@ export const NoticeMain = () => {
     }
   };
 
+  // useEffect(() => {
+  //   searchNoticeList();
+  // }, [search]);
+
+  // const searchNoticeList = async (currentPage?: number) => {
+  //   currentPage = currentPage || 1;
+  //   const searchParam = new URLSearchParams(search);
+  //   searchParam.append("currentPage", currentPage.toString());
+  //   searchParam.append("pageSize", "10");
+
+  //   const searchList = await postNoticeApi<INoticeListResponse>(
+  //     Notice.getList,
+  //     searchParam
+  //   );
+  //   if (searchList) {
+  //     setNoticeList(searchList.notice);
+  //     setListCount(searchList.noticeCnt);
+  //     setCpage(currentPage);
+  //   }
+  // };
+
   const handlerRead = (index: number) => {
     setIndex(index);
     setModal(!modal);
@@ -53,12 +81,17 @@ export const NoticeMain = () => {
 
   const onPostSuccess = () => {
     setModal(!modal);
-    searchNoticeList();
+    //searchNoticeList();
+    searchNoticeListbyProvider();
+  };
+
+  const handlerDynamicRouter = (noticeIdx: number) => {
+    navigate(`${noticeIdx}`);
   };
 
   return (
     <>
-      총 갯수 : {listCount} 
+      총 갯수 : {listCount}
       현재 페이지 : {cPage}
       <StyledTable>
         <thead>
@@ -75,9 +108,14 @@ export const NoticeMain = () => {
               return (
                 <tr
                   key={notice.noticeIdx}
-                  onClick={() => {
-                    handlerRead(notice.noticeIdx);
-                  }}
+                  // onClick={() => {
+                  //   handlerRead(notice.noticeIdx);
+                  // }
+                  onClick={() =>
+                    navigate(`${notice.noticeIdx}`, {
+                      state: { title: notice.title },
+                    })
+                  }
                 >
                   <StyledTd>{index + 1}</StyledTd>
                   <StyledTd>{notice.title}</StyledTd>
@@ -95,8 +133,9 @@ export const NoticeMain = () => {
       </StyledTable>
       <PageNavigate
         totalItemsCount={listCount}
-        itemsCountPerPage={5}
-        onChange={searchNoticeList}
+        itemsCountPerPage={10}
+        // onChange={searchNoticeList}
+        onChange={searchNoticeListbyProvider}
         activePage={cPage}
       ></PageNavigate>
       {modal && (

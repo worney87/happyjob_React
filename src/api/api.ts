@@ -4,4 +4,5 @@ export const Login = {
 
 export const Notice = {
     getList: '/board/noticeListJson.do',
+    getListByProvider: '/board/noticeListJsonByProvider.do'
 }

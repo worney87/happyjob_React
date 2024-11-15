@@ -12,7 +12,6 @@ import {
   INoticeModalProps,
   IPostResponse,
 } from "../../../../models/interface/store/INotice";
-import { contextType } from "react-modal";
 
 export const NoticeModal: FC<INoticeModalProps> = ({
   onSuccess,
@@ -22,7 +21,7 @@ export const NoticeModal: FC<INoticeModalProps> = ({
   const [modal, setModal] = useRecoilState<boolean>(modalState);
   const [userInfo] = useRecoilState<ILoginInfo>(loginInfoState);
   const [noticeDetail, setNoticeDatail] = useState<InoticeDetail>();
-  const [imageUrl, setImageUrl] = useState<string>();
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [fileData, setFileData] = useState<File>();
   const title = useRef<HTMLInputElement>();
   const context = useRef<HTMLInputElement>();
@@ -42,37 +41,50 @@ export const NoticeModal: FC<INoticeModalProps> = ({
     axios
       .post("/board/noticeDetailJson.do", { noticeSeq })
       .then((res: AxiosResponse<IDetailResponse>) => {
-        setNoticeDatail(res.data.detail);
+        const detail = res.data.detail;
+        setNoticeDatail(detail);
+        const { fileExt, logicalPath, fileName } = detail;
+        if (
+          fileExt === "png" ||
+          fileExt === "jpg" ||
+          fileExt === "gif" ||
+          fileExt === "jpeg"
+        ) {
+          setImageUrl(logicalPath);
+          setFileData({ name: fileName } as File);
+        } else {
+          setImageUrl(undefined);
+        }
       });
   };
 
-  const handlerSave = () => {
-    const param = {
-      title: title.current.value,
-      context: context.current.value,
-      loginId: userInfo.loginId,
-    };
+  // const handlerSave = () => {
+  //   const param = {
+  //     title: title.current.value,
+  //     context: context.current.value,
+  //     loginId: userInfo.loginId,
+  //   };
 
-    axios
-      .put("/board/noticeSaveJson.do", param)
-      .then((res: AxiosResponse<IPostResponse>) => {
-        res.data.result === "success" && onSuccess();
-      });
-  };
+  //   axios
+  //     .put("/board/noticeSaveJson.do", param)
+  //     .then((res: AxiosResponse<IPostResponse>) => {
+  //       res.data.result === "success" && onSuccess();
+  //     });
+  // };
 
-  const handlerUpdate = () => {
-    const param = {
-      title: title.current.value,
-      context: context.current.value,
-      loginId: userInfo.loginId,
-      noticeSeq: noticeSeq,
-    };
-    axios
-      .patch("/board/noticeUpdateJson.do", param)
-      .then((res: AxiosResponse<IPostResponse>) => {
-        res.data.result === "success" && onSuccess();
-      });
-  };
+  // const handlerUpdate = () => {
+  //   const param = {
+  //     title: title.current.value,
+  //     context: context.current.value,
+  //     loginId: userInfo.loginId,
+  //     noticeSeq: noticeSeq,
+  //   };
+  //   axios
+  //     .patch("/board/noticeUpdateJson.do", param)
+  //     .then((res: AxiosResponse<IPostResponse>) => {
+  //       res.data.result === "success" && onSuccess();
+  //     });
+  // };
 
   const handlerDelete = () => {
     axios
@@ -91,7 +103,7 @@ export const NoticeModal: FC<INoticeModalProps> = ({
       if (fileType === "image") {
         setImageUrl(URL.createObjectURL(fileInfo[0]));
       } else {
-        setImageUrl("");
+        setImageUrl(undefined);
       }
     }
     setFileData(fileInfo[0]);
@@ -112,6 +124,26 @@ export const NoticeModal: FC<INoticeModalProps> = ({
 
     axios
       .post("/board/noticeSaveForm.do", fileForm)
+      .then((res: AxiosResponse<IPostResponse>) => {
+        res.data.result === "success" && onSuccess();
+      });
+  };
+
+  const hadlerFileUpdate = () => {
+    const fileForm = new FormData();
+    const textData = {
+      noticeTit: title.current.value,
+      noticeCon: context.current.value,
+      loginId: userInfo.loginId,
+      noticeSeq: noticeSeq,
+    };
+    fileData && fileForm.append("file", fileData);
+    fileForm.append(
+      "text",
+      new Blob([JSON.stringify(textData)], { type: "application/json" })
+    );
+    axios
+      .post("/board/noticeUpdateForm.do", fileForm)
       .then((res: AxiosResponse<IPostResponse>) => {
         res.data.result === "success" && onSuccess();
       });
@@ -150,17 +182,16 @@ export const NoticeModal: FC<INoticeModalProps> = ({
           <div>
             {imageUrl ? (
               <>
-                <label>미리보기</label>
                 <img src={imageUrl} alt="preview" />
                 <p>{fileData?.name}</p>
               </>
             ) : (
-              <span>{fileData?.name}</span>
+              <p>{fileData?.name}</p>
             )}
           </div>
         </div>
         <div className={"button-container"}>
-          <button onClick={noticeSeq ? handlerUpdate : handlerFileSave}>
+          <button onClick={noticeSeq ? hadlerFileUpdate : handlerFileSave}>
             {noticeSeq ? "수정" : "등록"}
           </button>
           {noticeSeq && <button onClick={handlerDelete}>삭제</button>}
